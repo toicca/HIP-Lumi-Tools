@@ -10,13 +10,13 @@ def read_input():
 
     # Config or fileslisted
     input_type = parser.add_mutually_exclusive_group(required=True)
-    input_type.add_argument('--listFile', type=str, help='Path to a file that lists JSON files to combine')
+    input_type.add_argument('--listfile', type=str, help='Path to a file that lists JSON files to combine')
     input_type.add_argument('--files', type=str, nargs='+', help='List of JSON files to combine separated by spaces')
     parser.add_argument('--add_previous', action='store_true', help='Add possible runs from DCS JSONs to the start of the golden JSONs')
     args = parser.parse_args()
 
-    if args.listFile:
-        with open(args.listFile, 'r') as f:
+    if args.listfile:
+        with open(args.listfile, 'r') as f:
             files = f.read().splitlines()
     else:
         files = args.files

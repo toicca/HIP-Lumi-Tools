@@ -1,3 +1,2 @@
-Cert_Collisions2024_379984_380115_Golden.json
-Collisions24_13p6TeV_378981_381379_DCSOnly_TkPx.json
-Cert_Collisions2024_eraC_Golden.json
+/eos/user/c/cmsdqm/www/CAF/certification/Collisions24/Cert_Collisions2024_378981_381594_Golden.json
+/eos/user/c/cmsdqm/www/CAF/certification/Collisions24/DCSOnly_JSONS/dailyDCSOnlyJSON/Collisions24_13p6TeV_378981_382626_DCSOnly_TkPx.json

@@ -1,0 +1,11 @@
+{
+    "2023BCD" : "/eos/user/c/cmsdqm/www/CAF/certification/Collisions23/PileUp/BCD/pileup_JSON.txt",
+    "2023BC" : "/eos/user/c/cmsdqm/www/CAF/certification/Collisions23/PileUp/BC/pileup_JSON.txt",
+    "2023D" : "/eos/user/c/cmsdqm/www/CAF/certification/Collisions23/PileUp/D/pileup_JSON.txt",
+    "2022BCDEFG" : "/eos/user/c/cmsdqm/www/CAF/certification/Collisions22/PileUp/BCDEFG/pileup_JSON.txt",
+    "2022BCD" : "/eos/user/c/cmsdqm/www/CAF/certification/Collisions22/PileUp/BCD/pileup_JSON.txt",
+    "2022EFG" : "/eos/user/c/cmsdqm/www/CAF/certification/Collisions22/PileUp/EFG/pileup_JSON.txt",
+    "2018" : "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions18/13TeV/PileUp/UltraLegacy/pileup_latest.txt",
+    "2017" : "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/PileUp/UltraLegacy/pileup_latest.txt",
+    "2016" : "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/PileUp/UltraLegacy/pileup_latest.txt"
+}
