@@ -54,7 +54,7 @@ def create_histogram(year: str, lumijson: str, trigger: str = None, pileup_lates
 if __name__ == "__main__":
     args = parse_arguments()
     if not args.pileup_latest:
-        with open("Data/PileupJSONS.json") as f:
+        with open(os.environ["LUMIENV"]+"/Data/PileupJSONS.json") as f:
             pileup_latest = json.load(f)
             args.pileup_latest = pileup_latest[args.year]
     create_histogram(args.year, args.lumijson, args.trigger, args.pileup_latest)
