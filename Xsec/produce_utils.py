@@ -1,6 +1,7 @@
 import json
 import os
 import argparse
+import subprocess
 from typing import List, Dict
 
 def parse_args():
@@ -59,29 +60,54 @@ def find_xsec(dataset_files: Dict[str, List[str]]) -> Dict[str, float]:
         file_string = ''.join([file_prefix + file + "," for file in files])
         file_string = file_string[:-1]
 
-        call = f'cmsRun {os.environ["LUMIENV"]}/Xsec/genXsec_cfg.py inputFiles="{file_string}" maxEvents=-1 &> xsec.txt'
-        os.system(call)
+        call = f'cmsRun {os.environ["LUMIENV"]}/Xsec/genXsec_cfg.py inputFiles="{file_string}" maxEvents=-1'
+        process = subprocess.Popen(call, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = process.communicate()
+        output = output + error
 
+        target_xsec_string = 'After filter: final cross'
+        target_event_string = 'Filter efficiency (event-level)'
         found_xsec = False
         found_event_number = False
-        with open('xsec.txt', 'r') as f:
-            lines = f.readlines()
-            # Scuffed for loop
-            for line in reversed(lines):
-                print(line)
-                if 'After filter: final cross' in line:
+        # Process the output in reverse order
+        position = len(output) - 1
+        buffer = b''
+
+        while position >= 0:
+            next_byte = output[position:position+1]
+            if next_byte == b'\n' and buffer:
+                line = buffer[::-1].decode()
+                if target_xsec_string in line and not found_xsec:
                     xsec = float(line.split()[6])
                     xsecs[dataset] = xsec
                     found_xsec = True
-                if 'Filter efficiency (event-level)' in line:
+                    print(f'Found xsec for {dataset}: {xsec}')
+                if target_event_string in line and not found_event_number:
                     event_number = line.split()[3]
-                    event_number = int(event_number[1:-1])
+                    event_number = int(float(event_number[1:-1]))
                     nevents[dataset] = event_number
                     found_event_number = True
+                    print(f'Found nevents for {dataset}: {event_number}')
                 if found_xsec and found_event_number:
                     break
+                buffer = b''
+            else:
+                buffer += next_byte
+            position -= 1
 
-        os.system('rm xsec.txt')
+        # Handle the case if the first line does not end with a newline
+        if buffer and not (found_xsec and found_event_number):
+            line = buffer[::-1].decode()
+            if target_xsec_string in line and not found_xsec:
+                xsec = float(line.split()[6])
+                xsecs[dataset] = xsec
+                found_xsec = True
+            if target_event_string in line and not found_event_number:
+                event_number = line.split()[3]
+                event_number = int(float(event_number[1:-1]))
+                nevents[dataset] = event_number
+                found_event_number = True
+
 
     return xsecs, nevents
 
