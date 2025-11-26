@@ -141,18 +141,19 @@ if __name__ == '__main__':
         print(f'Processing dataset: {dataset}')
         files = find_files(dataset)
 
-        print(f'Found {len(files)} files for dataset {dataset}')
+        print(f'\tFound {len(files)} files for dataset {dataset}')
 
-        print(f'Processing files for dataset: {dataset}')
+        print(f'\tProcessing files for dataset: {dataset}')
         xsec, nevents = find_xsec(dataset, files, args.file_prefix, args.maxEvents)
-        print(f'Finished processing files for dataset: {dataset}')
+        print(f'\tFinished processing files for dataset: {dataset}')
         print()
         xsec_parts = xsec.split(' ')
         xsec_val = float(xsec_parts[0])
         xsec_unc = float(xsec_parts[2]) 
         rel_unc = xsec_unc / xsec_val if xsec_val != 0 else 0
-        print(f'\033[92mCross section: {xsec_val} +/- {xsec_unc} (rel_unc: {rel_unc}), Number of generated events: {nevents}\033[0m')
-        results[dataset] = {"xsec": xsec, "nGenEvents": nevents, "abs_unc": xsec_unc, "rel_unc": rel_unc}
+        print(f'\033[95mDataset: {dataset}\033[0m')
+        print(f'\033[92mCross section: {xsec_val} +/- {xsec_unc} (rel_unc: {rel_unc})\nNumber of generated events: {nevents}\033[0m')
+        results[dataset] = {"xsec": xsec_val, "nGenEvents": nevents, "abs_unc": xsec_unc, "rel_unc": rel_unc}
 
 
     # Check that output dir exists
