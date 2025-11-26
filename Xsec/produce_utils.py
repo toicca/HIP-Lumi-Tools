@@ -87,12 +87,12 @@ def find_xsec(dataset: str, files: List[str], file_prefix: str = 'root://cms-xrd
                 # xsec = float(line.split()[6])
                 xsec = line.split(" = ")[1]
                 found_xsec = True
-                print(f'Found xsec for {dataset}: {xsec}')
+                print(f'Found xsec {xsec} for {dataset}')
             if target_event_string in line and not found_event_number:
                 event_number = line.split()[3]
                 event_number = int(float(event_number[1:-1]))
                 found_event_number = True
-                print(f'Found nevents for {dataset}: {event_number}')
+                print(f'Found nevents {event_number} for {dataset}')
             if found_xsec and found_event_number:
                 break
             buffer = b''
@@ -121,7 +121,8 @@ if __name__ == '__main__':
     args = parse_args()
     if args.datasets:
         args.datasets = list(set(args.datasets))
-        print(args.datasets)
+        print('Datasets provided:')
+        print("\t",args.datasets)
         children = copy.deepcopy(args.datasets)
         parents = [find_parent(dataset) for dataset in args.datasets]
         args.datasets = args.datasets # parents
@@ -145,8 +146,13 @@ if __name__ == '__main__':
         print(f'Processing files for dataset: {dataset}')
         xsec, nevents = find_xsec(dataset, files, args.file_prefix, args.maxEvents)
         print(f'Finished processing files for dataset: {dataset}')
-        print(f'Cross section: {xsec}, Number of generated events: {nevents}')
-        results[dataset] = {"xsec": xsec, "nGenEvents": nevents}
+        print()
+        xsec_parts = xsec.split(' ')
+        xsec_val = float(xsec_parts[0])
+        xsec_unc = float(xsec_parts[2]) 
+        rel_unc = xsec_unc / xsec_val if xsec_val != 0 else 0
+        print(f'\033[92mCross section: {xsec_val} +/- {xsec_unc} (rel_unc: {rel_unc}), Number of generated events: {nevents}\033[0m')
+        results[dataset] = {"xsec": xsec, "nGenEvents": nevents, "abs_unc": xsec_unc, "rel_unc": rel_unc}
 
 
     # Check that output dir exists
