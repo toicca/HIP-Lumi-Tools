@@ -11,8 +11,8 @@ def parse_arguments():
     mc_group = parser.add_mutually_exclusive_group(required=True)
     mc_group.add_argument("--pileup_mc", type=str, help="The pileup MC file")
     mc_group.add_argument("--calculate_mc", action="store_true", help="Calculate the pileup MC file")
-    parser.add_argument("--output", type=str, required=True, help="The output directory")
-    parser.add_argument("--mc_dataset", type=str, help="The MC dataset for calculating the pileup MC file")
+    parser.add_argument("--output", type=str, required=True, help="The output file and its path")
+    parser.add_argument("--mc_dataset", type=str, help="The MC dataset quer query for calculating the pileup MC file")
     parser.add_argument("--save_mc", action="store_true", help="Save the pileup MC file")
     parser.add_argument("--rdf_filter", type=str, default="", help="RDataFrame filter for the MC pileup calculation, eg. a trigger path")
 
@@ -20,7 +20,8 @@ def parse_arguments():
 
     return args
 
-def calculate_mc_pileup(dataset: str, save_output: bool = False, rdf_filter: str = "", output_dir: str = "pileup_mc_files"):
+def calculate_mc_pileup(dataset: str, output: str, save_output: bool = False, rdf_filter: str = ""):
+    output = output.replace(".root", "") + "_mc_reference.root"
     # Find the dataset files
     print(f"Finding the files for dataset {dataset}")
     call = f"python3 CommonTools/find_dataset.py --dataset_query {dataset} --output pileup_mc_files --combine"
@@ -44,7 +45,7 @@ def calculate_mc_pileup(dataset: str, save_output: bool = False, rdf_filter: str
     pu_hist = rdf.Histo1D(("Pileup_nTrueInt", "pileup_mc", 100, 0, 100), "Pileup_nTrueInt", "genWeight").GetValue()
 
     if save_output:
-        f = ROOT.TFile(f"{output_dir}/pileup_mc.root", "RECREATE")
+        f = ROOT.TFile(output, "RECREATE")
         pu_hist.Write()
         f.Close()
 
@@ -67,7 +68,7 @@ if __name__ == "__main__":
         dt_file.Close()
     if args.calculate_mc:
         ROOT.EnableImplicitMT(16)
-        mc_hist = calculate_mc_pileup(args.mc_dataset, args.save_mc, output_dir=args.output, rdf_filter=args.rdf_filter)
+        mc_hist = calculate_mc_pileup(args.mc_dataset, args.output, args.save_mc, rdf_filter=args.rdf_filter)
     else:
         mc_file = ROOT.TFile(args.pileup_mc, "READ")
         mc_hist = mc_file.Get("Pileup_nTrueInt")
@@ -91,7 +92,14 @@ if __name__ == "__main__":
             pu_hist.SetBinError(i, 0)
 
     # Save the histogram
-    f = ROOT.TFile(f"{args.output}/pileup_weights.root", "RECREATE")
+    path = os.path.dirname(args.output)
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    if not args.output.endswith(".root"):
+        args.output += ".root"
+
+    f = ROOT.TFile(f"{args.output}", "RECREATE")
     pu_hist.Write()
     dt_hist.Write()
     mc_hist.Write()

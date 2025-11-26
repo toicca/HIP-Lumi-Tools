@@ -9,9 +9,6 @@ import configparser
 def run_prescales(run, trg):
     print(f"Getting prescales for run {run} and trigger {trg}")
 
-    # source /cvmfs/cms-bril.cern.ch/cms-lumi-pog/brilws-docker/brilws-env
-    command = subprocess.run(["source", "/cvmfs/cms-bril.cern.ch/cms-lumi-pog/brilws-docker/brilws-env"], shell=True, executable="/bin/bash")
-
     # Dumb ahh solution
     bc_alias = "singularity -s exec  --env PYTHONPATH=/home/bril/.local/lib/python3.10/site-packages /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cloud/brilws-docker:latest brilcalc"
     brilcall = [f"{bc_alias} trg -r {str(run)} --prescale --hltpath {str(trg)+'_v*'} --output-style csv"]

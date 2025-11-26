@@ -1,2 +1,5 @@
 CMSSW_14_0_9/
 *.root
+Results/
+output/
+CMSSW*
