@@ -7,10 +7,10 @@ import subprocess
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Produce a ROOT histogram with pileup information")
-    parser.add_argument("--year", required=True, choices=["2016", "2017", "2018", "2022", "2023", "2024"], type=str, help="Era")
+    parser.add_argument("--year", required=True, choices=["2016", "2017", "2018", "2022", "2023", "2024"], type=str, help="Year to process. Used to determine the pileup latest file if not provided and the output file name")
     parser.add_argument("--lumijson", required=True, type=str, help="Luminosity block JSON file such as GoldenJSON or DCSOnly")
-    parser.add_argument("--trigger", type=str, help="Trigger to that's used to get the pileup information")
-    parser.add_argument("--pileup-latest", type=str, default="", help="Pileup latest file")
+    parser.add_argument("--trigger", type=str, help="Trigger that's used to get the pileup information")
+    parser.add_argument("--pileup-latest", type=str, default="", help="Pileup latest file. Check Data/PileupJSONS.json for the latest pileup files for each year.")
     parser.add_argument("--minBiasXsec", type=int, default=69200, help="Minimum bias cross section")
     parser.add_argument("--vary-minBiasXsec", type=int, default=0, help="Vary the minimum bias cross section by this amount (ub)") # 3200 for run 2
     parser.add_argument("--output-path", type=str, default="./", help="Output path")
