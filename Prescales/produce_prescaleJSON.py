@@ -5,12 +5,13 @@ import io
 import argparse
 import json
 import configparser
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def run_prescales(run, trg):
     print(f"Getting prescales for run {run} and trigger {trg}")
 
     # source /cvmfs/cms-bril.cern.ch/cms-lumi-pog/brilws-docker/brilws-env
-    command = subprocess.run(["source", "/cvmfs/cms-bril.cern.ch/cms-lumi-pog/brilws-docker/brilws-env"], shell=True, executable="/bin/bash")
+    # command = subprocess.run(["source", "/cvmfs/cms-bril.cern.ch/cms-lumi-pog/brilws-docker/brilws-env"], shell=True, executable="/bin/bash")
 
     # Dumb ahh solution
     bc_alias = "singularity -s exec  --env PYTHONPATH=/home/bril/.local/lib/python3.10/site-packages /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cloud/brilws-docker:latest brilcalc"
@@ -32,6 +33,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Produce a prescale JSON file")
     parser.add_argument("--json", type=str, required=True, help="The input JSON file")
     parser.add_argument("--output", type=str, help="The output JSON file")
+    parser.add_argument("--test", action="store_true", help="Run in test mode with only 10 runs")
+    parser.add_argument("--workers", type=int, default=None, help="Number of parallel workers (default: ThreadPoolExecutor default)")
+    parser.add_argument("--runs", type=str, default=None, help="Comma-separated list of runs to process (default: all runs in JSON)")
     trg_group = parser.add_mutually_exclusive_group(required=True)
     trg_group.add_argument("--triggers", type=str, help="The triggers to get prescales for separated by commas")
     trg_group.add_argument("--trigger_config", type=str, help="Trigger config file used for JEC4PROMPT")
@@ -54,15 +58,30 @@ if __name__ == "__main__":
     with open(input_json, "r") as f:
         data = json.load(f)
 
-    runs = data.keys()
+    runs = list(data.keys())
+    if args.runs:
+        selected = set(args.runs.split(","))
+        runs = [r for r in runs if r in selected]
+    if args.test:
+        runs = runs[:10]
     last_lumisection = {run: data[run][-1][1] for run in runs}
 
-    dfs = []
+    tasks = [(run, trg) for run in runs for trg in triggers]
+
+    results = {}  # (run, trg) -> df
+    with ThreadPoolExecutor(max_workers=args.workers) as executor:
+        future_to_task = {executor.submit(run_prescales, run, trg): (run, trg) for run, trg in tasks}
+        for future in as_completed(future_to_task):
+            run, trg = future_to_task[future]
+            results[(run, trg)] = future.result()
+
     output = {}
     for run in runs:
         output[run] = {}
         for trg in triggers:
-            df = run_prescales(run, trg)
+            df = results.get((run, trg))
+            if df is None:
+                continue
 
             for index, row in df.iterrows():
                 if index < len(df) - 1:

@@ -1,20 +1,84 @@
-brilcalc lumi --byls --normtag /cvmfs/cms-bril.cern.ch/cms-lumi-pog/Normtags/normtag_PHYSICS.json -i [your json] --hltpath [your !HLT path] -o output.csv
+# Pileup Tools
 
-pileupReCalc_HLTpaths.py -i output.csv --inputLumiJSON pileup_latest.txt -o My_HLT_corrected_PileupJSON.txt --runperiod Run2
+## produce_pileupHist.py
 
-pileupReCalc_HLTpaths.py -i Data/output_UL16_postVFP.csv --inputLumiJSON pileup_latest.txt -o PileupJSON_UL16_postVFP.txt --runperiod Run2
+Produces a data pileup ROOT histogram using `brilcalc` (via singularity) and `pileupCalc.py`.
 
-pileupCalc.py -i MyAnalysisJSON.txt --inputLumiJSON pileup_latest.txt --calcMode true --minBiasXsec 69200 --maxPileupBin 100 --numPileupBins 100 MyDataPileupHistogram.root
+### Arguments
 
-# PER TRIGGER
-Generate the trigger luminosity
+| Argument | Required | Description |
+|---|---|---|
+| `--year` | Yes | Era: `2016`, `2017`, `2018`, `2022`, `2023`, `2024` |
+| `--lumijson` | Yes | Luminosity block JSON (GoldenJSON or DCSOnly) |
+| `--pileup-latest` | No | Pileup JSON file. If omitted, looked up from `Data/PileupJSONS.json` via `$LUMIENV` |
+| `--trigger` | No | HLT trigger path (without `_v*`) for per-trigger pileup |
+| `--minBiasXsec` | No | Minimum bias cross section in µb (default: 69200) |
+| `--vary-minBiasXsec` | No | Also produce ±variation histograms (e.g. 3200 for Run 2) |
+| `--output-path` | No | Output directory (default: `./`) |
+| `--normtag` | No | Normtag to use: `BRIL` or `PHYSICS` (default: `BRIL`) |
+| `--ignore-normtag` | No | Skip the normtag argument in the brilcalc call |
 
-`brilcalc lumi --byls --normtag /cvmfs/cms-bril.cern.ch/cms-lumi-pog/Normtags/normtag_PHYSICS.json -i [your json] --hltpath [your !HLT path] -o output.csv`
+### Example — no trigger
 
-Generate new pileup file
+```bash
+python3 Pileup/produce_pileupHist.py \
+  --year 2024 \
+  --lumijson /path/to/golden.json \
+  --pileup-latest /eos/user/c/cmsdqm/www/CAF/certification/Collisions24/PileUp/pileup_JSON-2024BCDEFGHI_Golden.txt \
+  --minBiasXsec 69200 \
+  --vary-minBiasXsec 3200 \
+  --output-path output/
+```
 
-`pileupReCalc_HLTpaths.py -i output.csv --inputLumiJSON pileup_latest.txt -o My_HLT_corrected_PileupJSON.txt --runperiod Run2`
+### Example — per trigger
 
-Use the new pileup file for pileupcalc (replace pileup_latest.txt)
+```bash
+python3 Pileup/produce_pileupHist.py \
+  --year 2024 \
+  --lumijson /path/to/golden.json \
+  --pileup-latest /eos/user/c/cmsdqm/www/CAF/certification/Collisions24/PileUp/pileup_JSON-2024BCDEFGHI_Golden.txt \
+  --trigger HLT_ZeroBias \
+  --minBiasXsec 69200 \
+  --output-path output/
+```
 
-`pileupCalc.py -i MyAnalysisJSON.txt --inputLumiJSON pileup_latest.txt --calcMode true --minBiasXsec 69200 --maxPileupBin 100 --numPileupBins 100 MyDataPileupHistogram.root`
+When a trigger is given, the script runs `pileupReCalc_HLTpaths.py` to correct the pileup JSON for the trigger's prescales before calling `pileupCalc.py`.
+
+### Output
+
+`pileup_{year}[_{trigger}]_{minBiasXsec}ub.root` — contains the `pileup` histogram (100 bins, [0, 100]).
+
+---
+
+## produce_pileupWeight.py
+
+Produces pileup weights by dividing the data pileup histogram by the MC pileup histogram.
+
+### Arguments
+
+| Argument | Required | Description |
+|---|---|---|
+| `--pileup_dt` / `--calculate_pileup` | Yes (one) | Data pileup ROOT file, or flag to calculate it |
+| `--pileup_mc` / `--calculate_mc` | Yes (one) | MC pileup ROOT file, or flag to calculate from DAS |
+| `--output` | Yes | Output ROOT file path |
+| `--mc_dataset` | No | DAS dataset query (needed with `--calculate_mc`) |
+| `--save_mc` | No | Save the MC pileup histogram to disk |
+| `--rdf_filter` | No | RDataFrame filter string for the MC calculation |
+
+### Example
+
+```bash
+python3 Pileup/produce_pileupWeight.py \
+  --pileup_dt output/pileup_2024_69200ub.root \
+  --pileup_mc output/pileup_mc.root \
+  --output output/pileup_weights.root
+```
+
+### Output
+
+`output.root` contains three histograms:
+- `weights` — data/MC ratio (pileup weights to apply to MC events)
+- `pileup_data` — normalised data pileup
+- `pileup_mc` — normalised MC pileup
+
+Bins where the relative error exceeds 50% are set to weight = 1 (no reweighting).

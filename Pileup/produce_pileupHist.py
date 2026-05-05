@@ -8,26 +8,40 @@ import subprocess
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Produce a ROOT histogram with pileup information")
     parser.add_argument("--year", required=True, choices=["2016", "2017", "2018", "2022", "2023", "2024"], type=str, help="Era")
-    parser.add_argument("--lumijson", type=str, help="Luminosity block JSON file such as GoldenJSON or DCSOnly")
+    parser.add_argument("--lumijson", required=True, type=str, help="Luminosity block JSON file such as GoldenJSON or DCSOnly")
     parser.add_argument("--trigger", type=str, help="Trigger to that's used to get the pileup information")
-    parser.add_argument("--pileup_latest", type=str, default="", help="Pileup latest file")
+    parser.add_argument("--pileup-latest", type=str, default="", help="Pileup latest file")
     parser.add_argument("--minBiasXsec", type=int, default=69200, help="Minimum bias cross section")
-    parser.add_argument("--vary_minBiasXsec", type=int, default=0, help="Vary the minimum bias cross section by this amount (ub)") # 3200 for run 2
-    parser.add_argument("--output_path", type=str, default="./", help="Output path")
+    parser.add_argument("--vary-minBiasXsec", type=int, default=0, help="Vary the minimum bias cross section by this amount (ub)") # 3200 for run 2
+    parser.add_argument("--output-path", type=str, default="./", help="Output path")
+    parser.add_argument("--ignore-normtag", action="store_true", help="Ignore the normtag in brilcalc call")
+    parser.add_argument("--normtag", type=str, choices=["BRIL", "PHYSICS",], default="BRIL", help="Normtag to use in brilcalc call (default: BRIL)")
 
     args = parser.parse_args()
 
     return args
 
-def create_histogram(year: str, lumijson: str, output_path: str = "./", trigger: str = None, pileup_latest: str = "pileup_latest.txt", minBiasXsec: int = 69200):
+BRILCALC = "singularity -s exec --env PYTHONPATH=/home/bril/.local/lib/python3.10/site-packages /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cloud/brilws-docker:latest brilcalc"
+
+def create_histogram(
+    year: str,
+    lumijson: str,
+    output_path: str = "./",
+    trigger: str = None,
+    pileup_latest: str = "pileup_latest.txt",
+    minBiasXsec: int = 69200
+    ):
     if output_path[-1] != "/":
         output_path += "/"
     output = f'{output_path}pileup_{year}{"_"+trigger if trigger else ""}_{minBiasXsec}ub.root'
 
     print("Calling brilcalc to get the luminosity")
-    call = f"brilcalc lumi --byls --normtag /cvmfs/cms-bril.cern.ch/cms-lumi-pog/Normtags/normtag_PHYSICS.json -i {lumijson} -o output.csv"
+    call = f"{BRILCALC} lumi --byls -i {lumijson} -o output.csv"
+    normtag = f"/cvmfs/cms-bril.cern.ch/cms-lumi-pog/Normtags/normtag_{args.normtag}.json"
     if trigger:
         call += f" --hltpath {trigger}_v*"
+    if not args.ignore_normtag:
+        call += f" --normtag {normtag}"
     print("-----------------------------------")
     print(call)
     os.system(call)
