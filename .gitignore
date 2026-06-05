@@ -3,3 +3,5 @@ CMSSW_14_0_9/
 Results/
 output/
 CMSSW*
+*.csv
+*.json
