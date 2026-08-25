@@ -8,11 +8,13 @@ Usage:
     python avgpu_per_run.py lumi_DCSONLY.csv --by-ls
     python avgpu_per_run.py lumi_DCSONLY.csv --golden --min-pu 4 --max-pu 6 -o pu4to6.json
     python avgpu_per_run.py lumi_DCSONLY.csv --output avgpu.json
+    python avgpu_per_run.py lumi_DCSONLY.csv --split-pu --split-dir output/
 """
 
 import argparse
 import csv
 import json
+import os
 import sys
 from collections import defaultdict
 
@@ -53,6 +55,45 @@ def parse_args():
             "Output a CMS golden JSON grouping lumisections that pass the "
             "--min-pu/--max-pu filter into contiguous ranges per run."
         ),
+    )
+    parser.add_argument(
+        "--split-pu",
+        action="store_true",
+        default=False,
+        help=(
+            "Write one golden JSON per pileup band, splitting on the per-lumisection "
+            "avgpu. Use for periods that mix several pileup points in the same runs."
+        ),
+    )
+    parser.add_argument(
+        "--pu-bands",
+        type=str,
+        default="0-1,2-3,4-6,7-100",
+        help=(
+            "Comma separated, inclusive bands of rounded per-LS avgpu for --split-pu "
+            "(default: 0-1,2-3,4-6,7-100)."
+        ),
+    )
+    parser.add_argument(
+        "--band-names",
+        type=str,
+        default="",
+        help=(
+            "Comma separated names for the --pu-bands. By default each band is named "
+            "pu<N> with N the rounded lumi-weighted average PU of the band."
+        ),
+    )
+    parser.add_argument(
+        "--split-prefix",
+        type=str,
+        default="lowPU",
+        help="File name prefix for the --split-pu output (default: lowPU).",
+    )
+    parser.add_argument(
+        "--split-dir",
+        type=str,
+        default=".",
+        help="Directory for the --split-pu output (default: current directory).",
     )
     return parser.parse_args()
 
@@ -163,6 +204,32 @@ def make_golden_json(ls_pu, min_pu=None, max_pu=None):
     return golden
 
 
+def parse_pu_bands(bands_str):
+    """Parse "0-1,2-3" into [(0, 1), (2, 3)] of inclusive rounded-PU bounds."""
+    bands = []
+    for token in bands_str.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        low, _, high = token.partition("-")
+        bands.append((int(low), int(high if high else low)))
+    return bands
+
+
+def band_summary(ls_data, min_pu, max_pu):
+    """Return (n_ls, recorded_lumi, lumi_weighted_avgpu) for one inclusive PU band."""
+    n_ls = 0
+    total_lumi = 0.0
+    weighted_pu = 0.0
+    for pu, recorded in ls_data.values():
+        if pu < min_pu or pu > max_pu:
+            continue
+        n_ls += 1
+        total_lumi += recorded
+        weighted_pu += pu * recorded
+    return n_ls, total_lumi, (weighted_pu / total_lumi if total_lumi > 0 else 0.0)
+
+
 def _write_or_print_json(data, output_path, label):
     if output_path:
         with open(output_path, "w") as f:
@@ -174,6 +241,55 @@ def _write_or_print_json(data, output_path, label):
 
 def main():
     args = parse_args()
+
+    if args.split_pu:
+        ls_data = compute_ls_data(args.csv)
+        ls_pu = {k: pu for k, (pu, _rec) in ls_data.items()}
+        bands = parse_pu_bands(args.pu_bands)
+        names = [n.strip() for n in args.band_names.split(",") if n.strip()]
+        if names and len(names) != len(bands):
+            sys.exit("--band-names must have as many entries as --pu-bands")
+
+        total_ls = len(ls_data)
+        total_lumi = sum(rec for _pu, rec in ls_data.values())
+        covered_ls = 0
+        covered_lumi = 0.0
+
+        os.makedirs(args.split_dir, exist_ok=True)
+        for i, (min_pu, max_pu) in enumerate(bands):
+            golden = make_golden_json(ls_pu, min_pu=min_pu, max_pu=max_pu)
+            n_ls, band_lumi, band_pu = band_summary(ls_data, min_pu, max_pu)
+            if not golden:
+                print(f"No lumisections in PU band {min_pu}-{max_pu}, skipping.", file=sys.stderr)
+                continue
+
+            name = names[i] if names else f"pu{round(band_pu)}"
+            output_path = os.path.join(args.split_dir, f"{args.split_prefix}_{name}.json")
+            with open(output_path, "w") as f:
+                json.dump(golden, f, indent=2)
+
+            covered_ls += n_ls
+            covered_lumi += band_lumi
+            print(
+                f"{name:>8}  PU {min_pu:>3}-{max_pu:<4} "
+                f"{len(golden):>3} run(s)  {n_ls:>6} LS  "
+                f"{band_lumi / 1e6:9.3f} /pb ({100 * band_lumi / total_lumi if total_lumi else 0:6.3f}%)  "
+                f"<PU> = {band_pu:.2f}  ->  {output_path}"
+            )
+
+        print(
+            f"\nCovered {covered_ls}/{total_ls} LS and "
+            f"{covered_lumi / 1e6:.3f}/{total_lumi / 1e6:.3f} /pb "
+            f"({100 * covered_lumi / total_lumi if total_lumi else 0:.3f}%)",
+            file=sys.stderr,
+        )
+        if covered_ls != total_ls:
+            print(
+                f"\033[93mWarning: {total_ls - covered_ls} LS fall outside the given "
+                f"--pu-bands and are in no output file.\033[0m",
+                file=sys.stderr,
+            )
+        return
 
     if args.golden:
         ls_data = compute_ls_data(args.csv)
