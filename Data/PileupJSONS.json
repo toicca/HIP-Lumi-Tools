@@ -1,9 +1,10 @@
 {
-    "2025" : "/eos/user/c/cmsdqm/www/CAF/certification/Collisions25/PileUp/pileup_JSON-2025_Golden.txt",
-    "2024" : "/eos/user/c/cmsdqm/www/CAF/certification/Collisions24/PileUp/pileup_JSON.txt",
-    "2023" : "/eos/user/c/cmsdqm/www/CAF/certification/Collisions23/PileUp/BCD/pileup_JSON.txt",
-    "2022" : "/eos/user/c/cmsdqm/www/CAF/certification/Collisions22/PileUp/BCDEFG/pileup_JSON.txt",
-    "2018" : "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions18/13TeV/PileUp/UltraLegacy/pileup_latest.txt",
-    "2017" : "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/PileUp/UltraLegacy/pileup_latest.txt",
-    "2016" : "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/PileUp/UltraLegacy/pileup_latest.txt"
+    "2026": "$LUMIENV/Data/pileup_JSON-2026_lowPU.txt",
+    "2025": "/eos/user/c/cmsdqm/www/CAF/certification/Collisions25/PileUp/pileup_JSON-2025_Golden.txt",
+    "2024": "/eos/user/c/cmsdqm/www/CAF/certification/Collisions24/PileUp/pileup_JSON.txt",
+    "2023": "/eos/user/c/cmsdqm/www/CAF/certification/Collisions23/PileUp/BCD/pileup_JSON.txt",
+    "2022": "/eos/user/c/cmsdqm/www/CAF/certification/Collisions22/PileUp/BCDEFG/pileup_JSON.txt",
+    "2018": "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions18/13TeV/PileUp/UltraLegacy/pileup_latest.txt",
+    "2017": "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/PileUp/UltraLegacy/pileup_latest.txt",
+    "2016": "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/PileUp/UltraLegacy/pileup_latest.txt"
 }

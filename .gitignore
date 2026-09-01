@@ -5,3 +5,4 @@ output/
 CMSSW*
 *.csv
 *.json
+__pycache__/

@@ -25,11 +25,14 @@ def find_das_files(dataset_query: str, output_dir: str, combine_datasets: bool =
     # Remove the file
     os.system(f'rm {output_dir}/datasets.txt')
 
-    # Remove possible previous dataset files
-    for dataset in datasets:
-        dataset = dataset.strip()
-        dataset_name = dataset.split('/')[1]
-        os.system(f'rm {output_dir}/{dataset_name}.txt')
+    # Remove possible previous dataset files, the queries below append to them
+    if combine_datasets:
+        os.system(f'rm -f {output_dir}/combined.txt')
+    else:
+        for dataset in datasets:
+            dataset = dataset.strip()
+            dataset_name = dataset.split('/')[1]
+            os.system(f'rm -f {output_dir}/{dataset_name}.txt')
 
     # For each dataset, find the files
     for dataset in datasets:
